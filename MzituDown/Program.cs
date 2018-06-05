@@ -1,8 +1,12 @@
-﻿using McMaster.Extensions.CommandLineUtils;
+﻿using HtmlAgilityPack;
+using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.IO;
+using Polly;
+using Polly.Retry;
 
 namespace MzituDown
 {
@@ -11,6 +15,8 @@ namespace MzituDown
     {
         public const string BASE_URL = "http://www.mzitu.com/";
         private static readonly HttpClient _httpClient;
+        private static readonly HtmlDocument _htmlDocument;
+        private static readonly RetryPolicy retryThreeTimesPolicy;
 
         static Program()
         {
@@ -18,6 +24,14 @@ namespace MzituDown
             {
                 BaseAddress = new Uri(BASE_URL)
             };
+            _htmlDocument = new HtmlDocument();
+
+            retryThreeTimesPolicy = Policy
+                       .Handle<DivideByZeroException>()
+                       .Retry(3, (ex, count) =>
+                       {
+                           Console.WriteLine("Request Error Retry {0}", count);
+                       });
         }
 
         public static int Main(string[] args)
@@ -25,7 +39,6 @@ namespace MzituDown
 
 #if DEBUG
             args = new string[] { "137224", "-p", "da" };
-            //Console.WriteLine("ASDSA");
 #endif
             return CommandLineApplication.Execute<Program>(args);
         }
@@ -39,9 +52,85 @@ namespace MzituDown
 
         private int OnExecute()
         {
-            Console.WriteLine(GetHtmlStringAsync(Id).Result);
-            Console.WriteLine(Path);
-            Console.ReadKey();
+            int pages = 0;
+            string albumName = string.Empty;
+            string htmlString = string.Empty;
+           
+            try
+            {
+                retryThreeTimesPolicy.Execute(() =>
+                {
+                    htmlString = GetHtmlStringAsync(Id).Result;
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Excuted Failed,Message: ({e.Message})");
+                return 0;
+            }
+
+            _htmlDocument.LoadHtml(htmlString);
+
+            albumName = _htmlDocument.DocumentNode.SelectSingleNode("//h2[@class='main-title']").InnerText;
+            pages = int.Parse(_htmlDocument.DocumentNode.SelectSingleNode("//div[@class='pagenavi']/a[last()-1]").InnerText);
+
+            Console.WriteLine($"Found {pages} Photos");
+
+            for (int p = 1; p <= pages; p++)
+            {
+                if (p == 1)
+                {
+                    var t = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
+                    if (t != null)
+                    {
+                        try
+                        {
+                            retryThreeTimesPolicy.Execute(() =>
+                            {
+                                DownloadImage(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                            });
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"Excuted DownloadImage Failed,Message: ({e.Message})");
+                            continue;
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        retryThreeTimesPolicy.Execute(() =>
+                        {
+                            htmlString = GetHtmlStringAsync($"{Id}/{p}").Result;
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Excuted Failed,Message: ({e.Message})");
+                        continue;
+                    }
+                    _htmlDocument.LoadHtml(htmlString);
+
+                    var t = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
+                    if (t != null)
+                    {
+                        try
+                        {
+                            retryThreeTimesPolicy.Execute(() =>
+                            {
+                                DownloadImage(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                            });
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"Excuted DownloadImage Failed,Message: ({e.Message})");
+                            continue;
+                        }
+                    }
+                }
+            }
             return 0;
         }
 
@@ -56,9 +145,30 @@ namespace MzituDown
             return html;
         }
 
-        public void DownloadImage()
+        public async void DownloadImage(string folderName, string picUrl)
         {
+            string fileName = picUrl.Split('/')[picUrl.Split('/').Length - 1];
+            string folderPath = System.IO.Path.Combine(Path, folderName.Replace(":", "").Replace("?", ""));
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36");
             _httpClient.DefaultRequestHeaders.Referrer = new Uri($"{BASE_URL}{Id}");
+
+            using (var response = await _httpClient.GetAsync(picUrl))
+            {
+                response.EnsureSuccessStatusCode();
+
+                using (FileStream fsWrite = new FileStream(System.IO.Path.Combine(folderPath, fileName), FileMode.Create))
+                {
+                    await response.Content.ReadAsStreamAsync().Result.CopyToAsync(fsWrite);
+                }
+            }
+
+            Console.WriteLine($"{fileName} download complete.");
         }
     }
 }
