@@ -27,7 +27,7 @@ namespace MzituDown
             _htmlDocument = new HtmlDocument();
 
             retryThreeTimesPolicy = Policy
-                       .Handle<DivideByZeroException>()
+                       .Handle<Exception>()
                        .Retry(3, (ex, count) =>
                        {
                            Console.WriteLine("Request Error Retry {0}", count);
@@ -87,7 +87,7 @@ namespace MzituDown
                         {
                             retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImage(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                                DownloadImageAsync(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
                             });
                         }
                         catch (Exception e)
@@ -120,7 +120,7 @@ namespace MzituDown
                         {
                             retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImage(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                                DownloadImageAsync(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
                             });
                         }
                         catch (Exception e)
@@ -145,7 +145,7 @@ namespace MzituDown
             return html;
         }
 
-        public async void DownloadImage(string folderName, string picUrl)
+        public async void DownloadImageAsync(string folderName, string picUrl)
         {
             string fileName = picUrl.Split('/')[picUrl.Split('/').Length - 1];
             string folderPath = System.IO.Path.Combine(Path, folderName.Replace(":", "").Replace("?", ""));
