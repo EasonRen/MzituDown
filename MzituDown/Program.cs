@@ -71,8 +71,13 @@ namespace MzituDown
 
             _htmlDocument.LoadHtml(htmlString);
 
-            albumName = _htmlDocument.DocumentNode.SelectSingleNode("//h2[@class='main-title']").InnerText;
-            pages = int.Parse(_htmlDocument.DocumentNode.SelectSingleNode("//div[@class='pagenavi']/a[last()-1]").InnerText);
+            albumName = _htmlDocument.DocumentNode.SelectSingleNode("//h2[@class='main-title']")?.InnerText;
+            if (string.IsNullOrEmpty(albumName))
+            {
+                Console.WriteLine("Page Not Found.");
+                return 0;
+            }
+            pages = Convert.ToInt32(_htmlDocument.DocumentNode.SelectSingleNode("//div[@class='pagenavi']/a[last()-1]")?.InnerText);          
 
             Console.WriteLine($"Found {pages} Photos");
 
