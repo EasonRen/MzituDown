@@ -10,7 +10,7 @@ using Polly.Retry;
 
 namespace MzituDown
 {
-    [Command(Description = "Mzitu Download")]
+    [Command(Description = "Mzitu Download, Version 0.1.2")]
     class Program
     {
         public const string BASE_URL = "http://www.mzitu.com/";
