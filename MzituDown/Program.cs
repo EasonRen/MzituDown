@@ -16,7 +16,7 @@ namespace MzituDown
         public const string BASE_URL = "http://www.mzitu.com/";
         private static readonly HttpClient _httpClient;
         private static readonly HtmlDocument _htmlDocument;
-        private static readonly RetryPolicy retryThreeTimesPolicy;
+        private static readonly RetryPolicy _retryThreeTimesPolicy;
 
         static Program()
         {
@@ -26,7 +26,7 @@ namespace MzituDown
             };
             _htmlDocument = new HtmlDocument();
 
-            retryThreeTimesPolicy = Policy
+            _retryThreeTimesPolicy = Policy
                        .Handle<Exception>()
                        .Retry(3, (ex, count) =>
                        {
@@ -58,7 +58,7 @@ namespace MzituDown
            
             try
             {
-                retryThreeTimesPolicy.Execute(() =>
+                _retryThreeTimesPolicy.Execute(() =>
                 {
                     htmlString = GetHtmlStringAsync(Id).Result;
                 });
@@ -85,14 +85,14 @@ namespace MzituDown
             {
                 if (p == 1)
                 {
-                    var t = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
-                    if (t != null)
+                    var imageNode = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
+                    if (imageNode != null)
                     {
                         try
                         {
-                            retryThreeTimesPolicy.Execute(() =>
+                            _retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImageAsync(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value);
                             });
                         }
                         catch (Exception e)
@@ -106,7 +106,7 @@ namespace MzituDown
                 {
                     try
                     {
-                        retryThreeTimesPolicy.Execute(() =>
+                        _retryThreeTimesPolicy.Execute(() =>
                         {
                             htmlString = GetHtmlStringAsync($"{Id}/{p}").Result;
                         });
@@ -118,14 +118,14 @@ namespace MzituDown
                     }
                     _htmlDocument.LoadHtml(htmlString);
 
-                    var t = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
-                    if (t != null)
+                    var imageNode = _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img");
+                    if (imageNode != null)
                     {
                         try
                         {
-                            retryThreeTimesPolicy.Execute(() =>
+                            _retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImageAsync(albumName, _htmlDocument.DocumentNode.SelectSingleNode("//div[@class='main-image']/p/a/img").Attributes["src"].Value);
+                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value);
                             });
                         }
                         catch (Exception e)
