@@ -8,9 +8,9 @@ using System.IO;
 using Polly;
 using Polly.Retry;
 
-namespace MzituDown
+namespace mzitudown
 {
-    [Command(Description = "Mzitu Download, Version 0.1.3")]
+    [Command(Description = "Mzitu Download, Version 0.1.5")]
     class Program
     {
         public const string BASE_URL = "http://www.mzitu.com/";
@@ -38,7 +38,7 @@ namespace MzituDown
         {
 
 #if DEBUG
-            args = new string[] { "137224", "-p", "da" };
+            args = new string[] { "147294", "-p", "da" };
 #endif
             return CommandLineApplication.Execute<Program>(args);
         }
@@ -92,7 +92,7 @@ namespace MzituDown
                         {
                             _retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value);
+                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value).GetAwaiter().GetResult();
                             });
                         }
                         catch (Exception e)
@@ -125,7 +125,7 @@ namespace MzituDown
                         {
                             _retryThreeTimesPolicy.Execute(() =>
                             {
-                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value);
+                                DownloadImageAsync(albumName, imageNode.Attributes["src"].Value).GetAwaiter().GetResult();
                             });
                         }
                         catch (Exception e)
@@ -150,7 +150,7 @@ namespace MzituDown
             return html;
         }
 
-        public async void DownloadImageAsync(string folderName, string picUrl)
+        public async Task DownloadImageAsync(string folderName, string picUrl)
         {
             string fileName = picUrl.Split('/')[picUrl.Split('/').Length - 1];
             string folderPath = System.IO.Path.Combine(Path, folderName.Replace(":", "").Replace("?", ""));
