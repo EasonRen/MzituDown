@@ -14,8 +14,5 @@
 ```
   mzitudown -h
 ```
-### 注意
-Linux系统应该使用```MzituDown 137224```
-
   
  
