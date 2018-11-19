@@ -1,8 +1,8 @@
-# 妹子图下载（http://www.mzitu.com/)
+# 妹子图下载（https://www.mzitu.com/)
 
 ### 使用方法
 ```
-  //例如(http://www.mzitu.com/137224)只需输入137224
+  //例如(https://www.mzitu.com/137224)只需输入137224
   mzitudown 137224
 ```  
 ### 图片保存路径
