@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Polly;
 using Polly.Retry;
+using System.Net;
 
 namespace mzitudown
 {
@@ -20,7 +21,12 @@ namespace mzitudown
 
         static Program()
         {
-            _httpClient = new HttpClient()
+            var handler = new HttpClientHandler()
+            {
+                AutomaticDecompression = DecompressionMethods.GZip
+            };
+
+            _httpClient = new HttpClient(handler)
             {
                 BaseAddress = new Uri(BASE_URL)
             };
@@ -38,7 +44,7 @@ namespace mzitudown
         {
 
 #if DEBUG
-            args = new string[] { "147294", "-p", "da" };
+            args = new string[] { "158530", "-p", "da" };
 #endif
             return CommandLineApplication.Execute<Program>(args);
         }
