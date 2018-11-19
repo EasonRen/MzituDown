@@ -10,10 +10,10 @@ using Polly.Retry;
 
 namespace mzitudown
 {
-    [Command(Description = "Mzitu Download, Version 0.1.6")]
+    [Command(Description = "Mzitu Download, Version 0.1.7")]
     class Program
     {
-        public const string BASE_URL = "http://www.mzitu.com/";
+        public const string BASE_URL = "https://www.mzitu.com/";
         private static readonly HttpClient _httpClient;
         private static readonly HtmlDocument _htmlDocument;
         private static readonly RetryPolicy _retryThreeTimesPolicy;
@@ -43,7 +43,7 @@ namespace mzitudown
             return CommandLineApplication.Execute<Program>(args);
         }
 
-        [Argument(0, Description = "Required;Mzitu album id(e.g. http://www.mzitu.com/137224 id is 137224)")]
+        [Argument(0, Description = "Required;Mzitu album id(e.g. https://www.mzitu.com/137224 id is 137224)")]
         [Required]
         public string Id { get; }
 
